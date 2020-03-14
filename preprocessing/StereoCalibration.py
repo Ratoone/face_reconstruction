@@ -62,4 +62,4 @@ class StereoCalibration:
 
         undistorted_right = cv2.remap(image_right, map_right1, map_right2, cv2.INTER_LINEAR)
 
-        return undistorted_left, undistorted_right
+        return cv2.convertScaleAbs(undistorted_left, alpha=255), cv2.convertScaleAbs(undistorted_right, alpha=255)

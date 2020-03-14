@@ -1,3 +1,5 @@
+import logging
+
 import cv2
 import numpy as np
 
@@ -24,7 +26,9 @@ class Preprocessing:
         self.stereo_right = StereoCalibration(self.calibration_mid, self.calibration_right)
         self.stereo_right.calibrate()
 
-        self.block_matching = cv2.StereoSGBM()
+        self.block_matching = cv2.StereoSGBM().create()
+
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def preprocess_image_batch(self, image_left: np.ndarray, image_mid: np.ndarray, image_right: np.ndarray):
         image_left = _normalize_image(image_left)
@@ -34,7 +38,12 @@ class Preprocessing:
         undistorted_left, undistorted_mid_left = self.stereo_left.reproject_images(image_left, image_mid)
         undistorted_mid_right, undistorted_right = self.stereo_left.reproject_images(image_mid, image_right)
 
+        self.logger.info("Computing disparity for left and middle image")
+
         left_disparity = self.block_matching.compute(undistorted_left, undistorted_mid_left)
+        right_disparity = self.block_matching.compute(undistorted_mid_right, undistorted_right)
+
+        left_disparity = _normalize_image(left_disparity)
         cv2.imshow("", left_disparity)
         cv2.waitKey()
         cv2.destroyAllWindows()
