@@ -62,11 +62,7 @@ class IntrinsicCalibration:
         self.image_points = np.array(self.image_points)
         self.object_points = np.array(self.object_points)
 
-        error, self.camera_matrix, self.distortion, self.rotation, self.translation = \
+        error, self.camera_matrix, self.distortion, _, _ = \
             cv2.calibrateCamera(self.object_points[self.successful], self.image_points[self.successful], self.image_size, None, None)
-        self.camera_matrix_augmented, _ = cv2.getOptimalNewCameraMatrix(self.camera_matrix, self.distortion, self.image_size, 0)
 
         self.logger.debug("Intrinsic calibration done with error {}".format(error))
-
-    def undistort_image(self, image: np.ndarray) -> np.ndarray:
-        return cv2.undistort(image, self.camera_matrix, self.distortion, None, self.camera_matrix_augmented)
