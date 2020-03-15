@@ -23,8 +23,6 @@ class IntrinsicCalibration:
         # list of successful calibration photos
         self.successful = np.array([], dtype=bool)
 
-        self.intrinsic_calibration()
-
     def intrinsic_calibration(self):
         self.object_points = []  # 3d point in real world space
         self.image_points = []  # 2d points in image plane.

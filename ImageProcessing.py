@@ -16,7 +16,7 @@ def _grayscale(image: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 
-class Preprocessing:
+class ImageProcessing:
     """
     Performs the whole preprocessing pipeline (camera calibration, color normalization) for the given image
     """
@@ -24,42 +24,46 @@ class Preprocessing:
     def __init__(self):
         self.calibration_left = IntrinsicCalibration("./images/Calibratie 1/calibrationLeft/")
         self.calibration_mid = IntrinsicCalibration("./images/Calibratie 1/calibrationMiddle/")
-        # self.calibration_right = IntrinsicCalibration("./images/Calibratie 1/calibrationRight/")
+        self.calibration_right = IntrinsicCalibration("./images/Calibratie 1/calibrationRight/")
 
         self.stereo_left = StereoCalibration(self.calibration_left, self.calibration_mid)
-        self.stereo_left.calibrate()
-        # self.stereo_right = StereoCalibration(self.calibration_mid, self.calibration_right)
-        # self.stereo_right.calibrate()
+        self.stereo_right = StereoCalibration(self.calibration_mid, self.calibration_right)
 
         self.block_matching = cv2.StereoSGBM().create()
 
         self.logger = logging.getLogger(self.__class__.__name__)
 
-    def preprocess_image_batch(self, image_left: np.ndarray, image_mid: np.ndarray, image_right: np.ndarray):
+    def calibrate(self):
+        self.calibration_left.intrinsic_calibration()
+        self.calibration_mid.intrinsic_calibration()
+        self.calibration_right.intrinsic_calibration()
+
+        self.stereo_left.calibrate()
+        self.stereo_right.calibrate()
+
+    def preprocess_image_batch(self, image_left: np.ndarray, image_right: np.ndarray, is_left: bool = True):
         image_left = _normalize_image(image_left)
-        image_mid = _normalize_image(image_mid)
         image_right = _normalize_image(image_right)
 
-        undistorted_left, undistorted_mid_left = self.stereo_left.reproject_images(image_left, image_mid)
-        # undistorted_mid_right, undistorted_right = self.stereo_right.reproject_images(image_mid, image_right)
+        stereo = self.stereo_left if is_left else self.stereo_right
+        undistorted_left, undistorted_right = stereo.reproject_images(image_left, image_right)
 
-        self.logger.info("Computing disparity for left and middle image")
+        self.logger.info("Computing disparity for {} image pair".format("left" if is_left else "right"))
 
-        left_disparity = self.block_matching.compute(undistorted_left, undistorted_mid_left)
+        left_disparity = self.block_matching.compute(undistorted_left, undistorted_right)
         left_disparity = cv2.convertScaleAbs(left_disparity, beta=16)
 
-        cv2.imshow("", left_disparity)
-        cv2.imshow("left", undistorted_left)
-        cv2.imshow("mid left", undistorted_mid_left)
-        cv2.waitKey()
-        cv2.destroyAllWindows()
+        return left_disparity
 
-        left_point_cloud = cv2.reprojectImageTo3D(left_disparity, self.stereo_left.Q)
-        left_point_cloud = left_point_cloud.reshape(-1, left_point_cloud.shape[-1])
-        left_point_cloud = left_point_cloud[~np.isinf(left_point_cloud).any(axis=1)]
+    def generate_point_cloud(self, disparity_image: np.ndarray, is_left: bool = True):
+        if is_left:
+            Q = self.stereo_left.Q
+        else:
+            Q = self.stereo_right.Q
+
+        point_cloud = cv2.reprojectImageTo3D(disparity_image, Q)
+        point_cloud = point_cloud.reshape(-1, point_cloud.shape[-1])
+        point_cloud = point_cloud[~np.isinf(point_cloud).any(axis=1)]
         pcl = open3d.geometry.PointCloud()
-        pcl.points = open3d.utility.Vector3dVector(left_point_cloud)
+        pcl.points = open3d.utility.Vector3dVector(point_cloud)
         open3d.visualization.draw_geometries([pcl])
-
-        # right_disparity = self.block_matching.compute(undistorted_mid_right, undistorted_right)
-        # right_disparity = _normalize_image(right_disparity)
