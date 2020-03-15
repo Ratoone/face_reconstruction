@@ -32,18 +32,26 @@ class StereoCalibration:
                                 self.camera_left.image_size,
                                 flags=cv2.CALIB_FIX_INTRINSIC)
 
-        self.logger.debug("Extrinsic calibration done with error {}".format(error))
+        self.logger.info("Extrinsic calibration done with error {}".format(error))
 
-        self.rotation_left, self.rotation_right, self.perspective_left, self.perspective_right, self.Q, _, _ = \
+        self.rotation_left, self.rotation_right, self.perspective_left, self.perspective_right, self.Q, self.roi_left, self.roi_right = \
             cv2.stereoRectify(self.camera_left.camera_matrix,
                               self.camera_left.distortion,
                               self.camera_right.camera_matrix,
                               self.camera_right.distortion,
                               self.camera_left.image_size,
                               self.rotation,
-                              self.translation)
+                              self.translation,
+                              flags=cv2.CALIB_ZERO_DISPARITY)
 
     def reproject_images(self, image_left: np.ndarray, image_right: np.ndarray) -> (np.ndarray, np.ndarray):
+        x1, y1, w1, h1 = self.roi_left
+        x2, y2, w2, h2 = self.roi_right
+        y = max(y1, y2)
+        h = min(y1 + h1, y2 + h2) - y
+        width = image_left.shape[0]
+        delta = min(x2 + w2, width - x1)
+
         map_left1, map_left2 = cv2.initUndistortRectifyMap(self.camera_left.camera_matrix,
                                                            self.camera_left.distortion,
                                                            self.rotation_left,
@@ -52,6 +60,7 @@ class StereoCalibration:
                                                            cv2.CV_32F)
 
         undistorted_left = cv2.remap(image_left, map_left1, map_left2, cv2.INTER_LINEAR)
+        undistorted_left = undistorted_left[y:y+h, width - delta:]
 
         map_right1, map_right2 = cv2.initUndistortRectifyMap(self.camera_right.camera_matrix,
                                                              self.camera_right.distortion,
@@ -61,5 +70,6 @@ class StereoCalibration:
                                                              cv2.CV_32F)
 
         undistorted_right = cv2.remap(image_right, map_right1, map_right2, cv2.INTER_LINEAR)
+        undistorted_right = undistorted_right[y:y + h, :delta]
 
         return cv2.convertScaleAbs(undistorted_left, alpha=255), cv2.convertScaleAbs(undistorted_right, alpha=255)
