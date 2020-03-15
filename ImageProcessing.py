@@ -4,8 +4,8 @@ import cv2
 import numpy as np
 import open3d
 
-from preprocessing.IntrinsicCalibration import IntrinsicCalibration
-from preprocessing.StereoCalibration import StereoCalibration
+from IntrinsicCalibration import IntrinsicCalibration
+from StereoCalibration import StereoCalibration
 
 
 def _normalize_image(image: np.ndarray) -> np.ndarray:

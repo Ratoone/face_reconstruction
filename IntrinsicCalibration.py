@@ -65,4 +65,4 @@ class IntrinsicCalibration:
         error, self.camera_matrix, self.distortion, _, _ = \
             cv2.calibrateCamera(self.object_points[self.successful], self.image_points[self.successful], self.image_size, None, None)
 
-        self.logger.debug("Intrinsic calibration done with error {}".format(error))
+        self.logger.info("Intrinsic calibration done with error {}".format(error))

@@ -3,7 +3,7 @@ import logging
 import cv2
 import numpy as np
 
-from preprocessing.IntrinsicCalibration import IntrinsicCalibration
+from IntrinsicCalibration import IntrinsicCalibration
 
 
 class StereoCalibration:
