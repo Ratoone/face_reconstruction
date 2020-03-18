@@ -1,3 +1,4 @@
+PyQt5
 open3d
 opencv-python
 numpy

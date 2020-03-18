@@ -73,3 +73,4 @@ class StereoCalibration:
         undistorted_right = undistorted_right[y:y + h, :delta]
 
         return cv2.convertScaleAbs(undistorted_left, alpha=255), cv2.convertScaleAbs(undistorted_right, alpha=255)
+        # return undistorted_left, undistorted_right
