@@ -1,4 +1,4 @@
-PyQt5
+scikit-learn
 open3d
 opencv-python
 numpy
