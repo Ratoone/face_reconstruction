@@ -23,11 +23,11 @@ class ImageProcessing:
     """
 
     def __init__(self):
-        self.calibration_left = IntrinsicCalibration("./images/Calibratie 1/calibrationLeft/")
-        self.calibration_mid = IntrinsicCalibration("./images/Calibratie 1/calibrationMiddle/")
-        self.calibration_right = IntrinsicCalibration("./images/Calibratie 1/calibrationRight/")
+        self.camera_left = IntrinsicCalibration("./images/Calibratie 1/calibrationLeft/")
+        self.camera_mid = IntrinsicCalibration("./images/Calibratie 1/calibrationMiddle/")
+        self.camera_right = IntrinsicCalibration("./images/Calibratie 1/calibrationRight/")
 
-        self.stereo_left = StereoCalibration(self.calibration_left, self.calibration_mid)
+        self.stereo_left = StereoCalibration(self.camera_left, self.camera_mid)
         # self.stereo_right = StereoCalibration(self.calibration_mid, self.calibration_right)
 
         self.block_matching = cv2.StereoSGBM().create()
@@ -35,9 +35,9 @@ class ImageProcessing:
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def calibrate(self):
-        self.calibration_left.intrinsic_calibration()
-        self.calibration_mid.intrinsic_calibration()
-        self.calibration_right.intrinsic_calibration()
+        self.camera_left.intrinsic_calibration()
+        self.camera_mid.intrinsic_calibration()
+        self.camera_right.intrinsic_calibration()
 
         self.stereo_left.calibrate()
         # self.stereo_right.calibrate()
@@ -57,7 +57,7 @@ class ImageProcessing:
         disparity = self.block_matching.compute(undistorted_left, undistorted_right)
         alpha = 1.0
         disparity = cv2.convertScaleAbs(disparity, alpha=alpha, beta=16*alpha)
-        # cv2.imwrite("disparity.jpg", disparity)
+        cv2.imwrite("disparity.jpg", disparity)
 
         return disparity
 
@@ -86,7 +86,8 @@ class ImageProcessing:
         # point_cloud = point_cloud.reshape(-1, point_cloud.shape[-1])
         # point_cloud = point_cloud[~np.isinf(point_cloud).any(axis=1)]
 
-        scipy.io.savemat('plc.mat', {'plc': point_cloud})
+        scipy.io.savemat('plc.mat', {'Q': Q, 'camera_matrix_left': self.camera_left.camera_matrix, 'camera_matrix_right': self.camera_mid.camera_matrix,
+                                     'rotation': self.stereo_left.rotation, 'translation': self.stereo_left.translation})
         pcl = open3d.geometry.PointCloud()
         pcl.points = open3d.utility.Vector3dVector(point_cloud)
         open3d.visualization.draw_geometries([pcl])

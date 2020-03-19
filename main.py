@@ -62,7 +62,7 @@ class MainWindow(QMainWindow):
     def _show_values(self):
         self.block_size_value.setText(str(self.block_size_slider.value()))
         self.min_disparity_value.setText(str(self.min_disparity_slider.value()))
-        self.num_disparity_value.setText(str(self.num_disparity_slider.value()))
+        self.num_disparity_value.setText(str(self.num_disparity_slider.value()*16))
         self.p1_value.setText(str(self.p1_slider.value()))
         self.p2_value.setText(str(self.p2_slider.value()))
         self.max_diff_value.setText(str(self.max_dif_slider.value()))
