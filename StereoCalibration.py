@@ -49,14 +49,14 @@ class StereoCalibration:
         x2, y2, w2, h2 = self.roi_right
         y = max(y1, y2)
         h = min(y1 + h1, y2 + h2) - y
-        width = image_left.shape[0]
+        width, height = image_left.shape[:2]
         delta = min(x2 + w2, width - x1)
 
         map_left1, map_left2 = cv2.initUndistortRectifyMap(self.camera_left.camera_matrix,
                                                            self.camera_left.distortion,
                                                            self.rotation_left,
                                                            self.projection_left,
-                                                           image_left.shape[:2:-1],
+                                                           (height, width),
                                                            cv2.CV_32F)
 
         undistorted_left = cv2.remap(image_left, map_left1, map_left2, cv2.INTER_LINEAR)
@@ -66,7 +66,7 @@ class StereoCalibration:
                                                              self.camera_right.distortion,
                                                              self.rotation_right,
                                                              self.projection_right,
-                                                             image_right.shape[:2:-1],
+                                                             (height, width),
                                                              cv2.CV_32F)
 
         undistorted_right = cv2.remap(image_right, map_right1, map_right2, cv2.INTER_LINEAR)

@@ -70,6 +70,7 @@ class MainWindow(QMainWindow):
         self.speckle_value.setText(str(self.speckle_slider.value()))
 
     def calibrate(self):
+        self.calibrate_button.setEnabled(False)
         self.process.calibrate()
         self.show_image(self.process.preprocess_image_batch(self.img1, self.img2))
 
@@ -90,7 +91,6 @@ class MainWindow(QMainWindow):
         self.process.generate_point_cloud(img)
 
     def show_image(self, image: np.ndarray):
-        # image = cv2.convertScaleAbs(image, alpha=16)
         cv2.imshow("", image)
         cv2.waitKey()
         cv2.destroyAllWindows()

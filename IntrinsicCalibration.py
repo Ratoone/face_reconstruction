@@ -32,7 +32,7 @@ class IntrinsicCalibration:
 
         # prepare object points
         grid_points = np.zeros((self.inner_x_grid * self.inner_y_grid, 3), np.float32)
-        grid_points[:, :2] = np.mgrid[0:self.inner_x_grid, 0:self.inner_y_grid].T.reshape(-1, 2)
+        grid_points[:, :2] = np.mgrid[0:self.inner_x_grid, 0:self.inner_y_grid].T.reshape(-1, 2)*100
 
         for image_name in sorted(glob.glob(os.path.join(self.calibration_image_folder, "*.jpg"))):
             im = cv2.imread(image_name)
@@ -61,6 +61,6 @@ class IntrinsicCalibration:
         self.object_points = np.array(self.object_points)
 
         error, self.camera_matrix, self.distortion, _, _ = \
-            cv2.calibrateCamera(self.object_points[self.successful], self.image_points[self.successful], self.image_size, None, None)
+            cv2.calibrateCamera(self.object_points[self.successful], self.image_points[self.successful], self.image_size, None, None, criteria=criteria, flags=cv2.CALIB_FIX_PRINCIPAL_POINT)
 
         self.logger.info("Intrinsic calibration done with error {}".format(error))

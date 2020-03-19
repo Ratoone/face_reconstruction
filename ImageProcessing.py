@@ -3,6 +3,7 @@ import logging
 import cv2
 import numpy as np
 import open3d
+import scipy.io
 
 from IntrinsicCalibration import IntrinsicCalibration
 from StereoCalibration import StereoCalibration
@@ -56,7 +57,7 @@ class ImageProcessing:
         disparity = self.block_matching.compute(undistorted_left, undistorted_right)
         alpha = 1.0
         disparity = cv2.convertScaleAbs(disparity, alpha=alpha, beta=16*alpha)
-        cv2.imwrite("disparity.jpg", disparity)
+        # cv2.imwrite("disparity.jpg", disparity)
 
         return disparity
 
@@ -69,7 +70,8 @@ class ImageProcessing:
                                                       minDisparity=min_disparity,
                                                       disp12MaxDiff=disp_max_dif,
                                                       speckleWindowSize=speckle_size,
-                                                      speckleRange=1
+                                                      speckleRange=1,
+                                                      mode=cv2.STEREO_SGBM_MODE_HH
                                                       )
         # self.block_matching = cv2.StereoBM().create(blockSize=block_size, numDisparities=num_disparities)
 
@@ -79,10 +81,29 @@ class ImageProcessing:
         else:
             Q = self.stereo_right.Q
 
-        point_cloud = cv2.reprojectImageTo3D(disparity_image, Q)
-        point_cloud = point_cloud.reshape(-1, point_cloud.shape[-1])
-        point_cloud = point_cloud[~np.isinf(point_cloud).any(axis=1)]
+        point_cloud = self.reprojectTo3d(disparity_image, Q)
+        # point_cloud = cv2.reprojectImageTo3D(disparity_image, Q)
+        # point_cloud = point_cloud.reshape(-1, point_cloud.shape[-1])
+        # point_cloud = point_cloud[~np.isinf(point_cloud).any(axis=1)]
 
+        scipy.io.savemat('plc.mat', {'plc': point_cloud})
         pcl = open3d.geometry.PointCloud()
         pcl.points = open3d.utility.Vector3dVector(point_cloud)
         open3d.visualization.draw_geometries([pcl])
+
+    def reprojectTo3d(self, disparity, Q):
+        disparity = np.float32(disparity)
+
+        w, h = disparity.shape
+        point_cloud = []
+        for x in range(w):
+            for y in range(h):
+                point = [x, y, disparity[x, y], 1]
+                point = np.dot(Q, point)
+                if point[-1] == 0:
+                    continue
+                point[-1] *= 1000
+                point = point / point[-1]
+                point_cloud.append(point[:-1])
+        return np.array(point_cloud)
+
