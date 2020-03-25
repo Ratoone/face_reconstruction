@@ -54,8 +54,8 @@ class MainWindow(QMainWindow):
         if self.p1_slider.value() >= self.p2_slider.value():
             self.p2_slider.setValue(self.p1_slider.value() + 1)
 
-        self.p1_slider.setValue(8*self.block_size_slider.value()**2)
-        self.p2_slider.setValue(32*self.block_size_slider.value()**2)
+        self.p1_slider.setValue(8*3*self.block_size_slider.value()**2)
+        self.p2_slider.setValue(32*3*self.block_size_slider.value()**2)
 
         self._show_values()
 
@@ -72,7 +72,6 @@ class MainWindow(QMainWindow):
     def calibrate(self):
         self.calibrate_button.setEnabled(False)
         self.process.calibrate()
-        self.show_image(self.process.preprocess_image_batch(self.img1, self.img2))
 
     def recompute_disparity(self):
         self.process.set_sgbm_parameters(self.num_disparity_slider.value() * 16,
@@ -84,14 +83,15 @@ class MainWindow(QMainWindow):
                                          self.uniqueness_slider.value(),
                                          self.speckle_slider.value()
                                          )
-        self.show_image(self.process.preprocess_image_batch(self.img1, self.img2))
+        self.show_image(self.process.process_pair(self.img1, self.img2))
+        self.show_image(self.process.process_pair(self.img2, self.img3, is_left=False))
 
     def show_pcl(self):
-        img = self.process.preprocess_image_batch(self.img1, self.img2)
-        self.process.generate_point_cloud(img)
+        img = self.process.process_pair(self.img2, self.img3, is_left=False)
+        self.process.generate_point_cloud(img, is_left=False)
 
     def show_image(self, image: np.ndarray):
-        cv2.imshow("", image)
+        cv2.imshow("", (image-self.min_disparity_slider.value())/self.num_disparity_slider.value() / 16)
         cv2.waitKey()
         cv2.destroyAllWindows()
 

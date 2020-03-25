@@ -21,7 +21,7 @@ class StereoCalibration:
 
     def calibrate(self):
         mask = np.logical_and(self.camera_left.successful, self.camera_right.successful)
-        error, _, _, _, _, self.rotation, self.translation, _, _ = \
+        error, self.camera_left.camera_matrix, self.camera_left.distortion, self.camera_right.camera_matrix, self.camera_right.distortion, self.rotation, self.translation, _, _ = \
             cv2.stereoCalibrate(self.camera_left.object_points[mask],
                                 self.camera_left.image_points[mask],
                                 self.camera_right.image_points[mask],
@@ -41,8 +41,7 @@ class StereoCalibration:
                               self.camera_right.distortion,
                               self.camera_left.image_size,
                               self.rotation,
-                              self.translation,
-                              flags=cv2.CALIB_ZERO_DISPARITY)
+                              self.translation)
 
     def reproject_images(self, image_left: np.ndarray, image_right: np.ndarray) -> (np.ndarray, np.ndarray):
         x1, y1, w1, h1 = self.roi_left
