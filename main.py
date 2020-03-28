@@ -3,6 +3,7 @@ import sys
 
 import cv2
 import numpy as np
+import open3d
 from PyQt5 import uic, QtCore
 from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QSlider
@@ -26,7 +27,7 @@ class MainWindow(QMainWindow):
 
         self.compute_disparity_button.clicked.connect(self.recompute_disparity)
         self.calibrate_button.clicked.connect(self.calibrate)
-        self.show_pcl_button.clicked.connect(self.show_pcl)
+        # self.show_pcl_button.clicked.connect(self.show_pcl)
 
         self.image_placeholder = self.findChild(QLabel, "disparity_image")
 
@@ -83,15 +84,12 @@ class MainWindow(QMainWindow):
                                          self.uniqueness_slider.value(),
                                          self.speckle_slider.value()
                                          )
-        self.show_image(self.process.process_pair(self.img1, self.img2))
-        self.show_image(self.process.process_pair(self.img2, self.img3, is_left=False))
-
-    def show_pcl(self):
-        img = self.process.process_pair(self.img2, self.img3, is_left=False)
-        self.process.generate_point_cloud(img, is_left=False)
+        disparity, pcl = self.process.process_pair(self.img2, self.img3, is_left=False)
+        self.show_image(disparity)
+        open3d.visualization.draw_geometries([pcl])
 
     def show_image(self, image: np.ndarray):
-        cv2.imshow("", (image-self.min_disparity_slider.value())/self.num_disparity_slider.value() / 16)
+        cv2.imshow("", image)
         cv2.waitKey()
         cv2.destroyAllWindows()
 

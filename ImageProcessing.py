@@ -42,6 +42,10 @@ class ImageProcessing:
         self.stereo_left.calibrate()
         self.stereo_right.calibrate()
 
+    def process_image_batch(self, image_left, image_mid, image_right):
+        disparity_left, point_cloud_left = self.process_pair(image_left, image_mid, is_left=True)
+        disparity_right, point_cloud_right = self.process_pair(image_mid, image_right, is_left=False)
+
     def process_pair(self, image_left: np.ndarray, image_right: np.ndarray, is_left: bool = True):
         image_left = _normalize_image(image_left)
         image_right = _normalize_image(image_right)
@@ -55,9 +59,15 @@ class ImageProcessing:
         cv2.imwrite("undistorted_right.jpg", undistorted_right)
 
         disparity = self.block_matching.compute(undistorted_left, undistorted_right).astype(np.float32) / 16.0
-        cv2.imwrite("disparity.jpg", disparity)
+        disparity = (disparity - self.block_matching.getMinDisparity()) / self.block_matching.getNumDisparities()
 
-        return disparity
+        point_cloud, mask = self.generate_point_cloud(disparity)
+        colored_points = cv2.cvtColor(_normalize_image(undistorted_left), cv2.COLOR_BGR2RGB)
+        pcl = open3d.geometry.PointCloud()
+        pcl.points = open3d.utility.Vector3dVector(point_cloud)
+        pcl.colors = open3d.utility.Vector3dVector(colored_points.reshape(-1, colored_points.shape[-1])[mask])
+
+        return disparity, pcl
 
     def set_sgbm_parameters(self, num_disparities, min_disparity, block_size, p1, p2, disp_max_dif, uniqueness,
                             speckle_size):
@@ -72,38 +82,15 @@ class ImageProcessing:
                                                     speckleRange=1,
                                                     mode=cv2.STEREO_SGBM_MODE_HH
                                                     )
-        # self.block_matching = cv2.StereoBM().create(blockSize=block_size, numDisparities=num_disparities)
 
-    def generate_point_cloud(self, disparity_image: np.ndarray, is_left: bool = True):
-        if is_left:
-            Q = self.stereo_left.Q
-        else:
-            Q = self.stereo_right.Q
+    def generate_point_cloud(self, disparity_image: np.ndarray):
+        focal_length = 1530
+        Q = np.float32([[1, 0, 0, 0],
+                        [0, -1, 0, 0],
+                        [0, 0, focal_length * 0.05, 0],  # Focal length multiplication obtained experimentally.
+                        [0, 0, 0, 1]])
 
-        # point_cloud = self.reprojectTo3d(disparity_image, Q)
+        mask = (disparity_image > disparity_image.min()).reshape(-1)
         point_cloud = cv2.reprojectImageTo3D(disparity_image, Q)
         point_cloud = point_cloud.reshape(-1, point_cloud.shape[-1])
-        point_cloud = point_cloud[~np.isinf(point_cloud).any(axis=1)]
-
-        # scipy.io.savemat('plc.mat', {'Q': Q, 'camera_matrix_left': self.camera_left.camera_matrix,
-        #                              'camera_matrix_right': self.camera_mid.camera_matrix,
-        #                              'rotation': self.stereo_left.rotation,
-        #                              'translation': self.stereo_left.translation})
-        pcl = open3d.geometry.PointCloud()
-        pcl.points = open3d.utility.Vector3dVector(point_cloud)
-        open3d.visualization.draw_geometries([pcl])
-
-    def reprojectTo3d(self, disparity, Q):
-        disparity = np.float32(disparity) / 16
-
-        w, h = disparity.shape
-        point_cloud = []
-        for x in range(w):
-            for y in range(h):
-                point = [x, y, disparity[x, y], 1]
-                point = np.dot(Q, point)
-                if point[-1] == 0:
-                    continue
-                point = point / point[-1]
-                point_cloud.append(point[:-1])
-        return np.array(point_cloud)
+        return point_cloud[mask], mask

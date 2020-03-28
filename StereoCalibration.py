@@ -41,7 +41,8 @@ class StereoCalibration:
                               self.camera_right.distortion,
                               self.camera_left.image_size,
                               self.rotation,
-                              self.translation)
+                              self.translation,
+                              newImageSize=self.camera_left.image_size)
 
     def reproject_images(self, image_left: np.ndarray, image_right: np.ndarray) -> (np.ndarray, np.ndarray):
         x1, y1, w1, h1 = self.roi_left
@@ -55,7 +56,7 @@ class StereoCalibration:
                                                            self.camera_left.distortion,
                                                            self.rotation_left,
                                                            self.projection_left,
-                                                           (height, width),
+                                                           self.camera_left.image_size,
                                                            cv2.CV_32F)
 
         undistorted_left = cv2.remap(image_left, map_left1, map_left2, cv2.INTER_LINEAR)
@@ -65,11 +66,10 @@ class StereoCalibration:
                                                              self.camera_right.distortion,
                                                              self.rotation_right,
                                                              self.projection_right,
-                                                             (height, width),
+                                                             self.camera_left.image_size,
                                                              cv2.CV_32F)
 
         undistorted_right = cv2.remap(image_right, map_right1, map_right2, cv2.INTER_LINEAR)
         undistorted_right = undistorted_right[y:y + h, :delta]
 
         return cv2.convertScaleAbs(undistorted_left, alpha=255), cv2.convertScaleAbs(undistorted_right, alpha=255)
-        # return undistorted_left, undistorted_right
