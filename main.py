@@ -1,5 +1,6 @@
 import logging
 import sys
+from functools import partial
 
 import cv2
 import numpy as np
@@ -25,7 +26,8 @@ class MainWindow(QMainWindow):
         # self.img2 = cv2.cvtColor(self.img2, cv2.COLOR_BGR2GRAY)
         self.img3 = cv2.imread("./images/subject1/subject1Right/subject1_Right_1.jpg")
 
-        self.compute_disparity_button.clicked.connect(self.recompute_disparity)
+        self.compute_disparity_left_button.clicked.connect(partial(self.recompute_disparity, True))
+        self.compute_disparity_right_button.clicked.connect(partial(self.recompute_disparity, False))
         self.calibrate_button.clicked.connect(self.calibrate)
         # self.show_pcl_button.clicked.connect(self.show_pcl)
 
@@ -47,6 +49,8 @@ class MainWindow(QMainWindow):
         self.uniqueness_slider.valueChanged.connect(self._show_values)
         self.speckle_slider = self.findChild(QSlider, "speckle_size")
         self.speckle_slider.valueChanged.connect(self._show_values)
+
+        self._validate_values()
 
     def _validate_values(self):
         if self.block_size_slider.value() % 2 == 0:
@@ -74,7 +78,7 @@ class MainWindow(QMainWindow):
         self.calibrate_button.setEnabled(False)
         self.process.calibrate()
 
-    def recompute_disparity(self):
+    def recompute_disparity(self, is_left):
         self.process.set_sgbm_parameters(self.num_disparity_slider.value() * 16,
                                          self.min_disparity_slider.value(),
                                          self.block_size_slider.value(),
@@ -84,7 +88,14 @@ class MainWindow(QMainWindow):
                                          self.uniqueness_slider.value(),
                                          self.speckle_slider.value()
                                          )
-        disparity, pcl = self.process.process_pair(self.img2, self.img3, is_left=False)
+        if is_left:
+            image_left = self.img1
+            image_right = self.img2
+        else:
+            image_left = self.img2
+            image_right = self.img3
+
+        disparity, pcl = self.process.process_pair(image_left, image_right, is_left=is_left)
         self.show_image(disparity)
         open3d.visualization.draw_geometries([pcl])
 

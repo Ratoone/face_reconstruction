@@ -27,17 +27,17 @@
      <string>Press calibrate to start</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="compute_disparity_button">
+   <widget class="QPushButton" name="compute_disparity_left_button">
     <property name="geometry">
      <rect>
       <x>170</x>
       <y>270</y>
-      <width>151</width>
+      <width>171</width>
       <height>61</height>
      </rect>
     </property>
     <property name="text">
-     <string>Compute Disparity</string>
+     <string>Compute Disparity Left</string>
     </property>
    </widget>
    <widget class="QPushButton" name="calibrate_button">
@@ -57,7 +57,7 @@
     <property name="geometry">
      <rect>
       <x>50</x>
-      <y>350</y>
+      <y>410</y>
       <width>271</width>
       <height>31</height>
      </rect>
@@ -100,6 +100,9 @@
        </property>
        <property name="singleStep">
         <number>1</number>
+       </property>
+       <property name="value">
+        <number>7</number>
        </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -190,7 +193,7 @@
         <number>1</number>
        </property>
        <property name="value">
-        <number>1</number>
+        <number>2</number>
        </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -222,6 +225,9 @@
      </item>
      <item row="5" column="1">
       <widget class="QSlider" name="disp_max_dif">
+       <property name="value">
+        <number>10</number>
+       </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
        </property>
@@ -231,6 +237,9 @@
       <widget class="QSlider" name="uniqueness">
        <property name="maximum">
         <number>20</number>
+       </property>
+       <property name="value">
+        <number>4</number>
        </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -247,6 +256,9 @@
        </property>
        <property name="singleStep">
         <number>1</number>
+       </property>
+       <property name="value">
+        <number>75</number>
        </property>
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
@@ -296,6 +308,19 @@
       </widget>
      </item>
     </layout>
+   </widget>
+   <widget class="QPushButton" name="compute_disparity_right_button">
+    <property name="geometry">
+     <rect>
+      <x>170</x>
+      <y>340</y>
+      <width>171</width>
+      <height>61</height>
+     </rect>
+    </property>
+    <property name="text">
+     <string>Compute Disparity Right</string>
+    </property>
    </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">

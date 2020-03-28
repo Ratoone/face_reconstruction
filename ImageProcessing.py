@@ -9,10 +9,6 @@ from IntrinsicCalibration import IntrinsicCalibration
 from StereoCalibration import StereoCalibration
 
 
-def _normalize_image(image: np.ndarray) -> np.ndarray:
-    return cv2.normalize(image, None, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
-
-
 def _grayscale(image: np.ndarray) -> np.ndarray:
     return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
@@ -47,11 +43,14 @@ class ImageProcessing:
         disparity_right, point_cloud_right = self.process_pair(image_mid, image_right, is_left=False)
 
     def process_pair(self, image_left: np.ndarray, image_right: np.ndarray, is_left: bool = True):
-        image_left = _normalize_image(image_left)
-        image_right = _normalize_image(image_right)
+        image_left = cv2.normalize(image_left, None, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+        image_right = cv2.normalize(image_right, None, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
 
         stereo = self.stereo_left if is_left else self.stereo_right
         undistorted_left, undistorted_right = stereo.reproject_images(image_left, image_right)
+
+        undistorted_left = cv2.normalize(undistorted_left, None, 0, 255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
+        undistorted_right = cv2.normalize(undistorted_right, None, 0, 255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U)
 
         self.logger.info("Computing disparity for {} image pair".format("left" if is_left else "right"))
 
@@ -62,7 +61,7 @@ class ImageProcessing:
         disparity = (disparity - self.block_matching.getMinDisparity()) / self.block_matching.getNumDisparities()
 
         point_cloud, mask = self.generate_point_cloud(disparity)
-        colored_points = cv2.cvtColor(_normalize_image(undistorted_left), cv2.COLOR_BGR2RGB)
+        colored_points = cv2.cvtColor(cv2.normalize(undistorted_left, None, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F), cv2.COLOR_BGR2RGB)
         pcl = open3d.geometry.PointCloud()
         pcl.points = open3d.utility.Vector3dVector(point_cloud)
         pcl.colors = open3d.utility.Vector3dVector(colored_points.reshape(-1, colored_points.shape[-1])[mask])
