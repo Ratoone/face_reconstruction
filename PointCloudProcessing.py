@@ -14,15 +14,11 @@ class PointCloudProcessing:
         downsampled_left = self.preprocess_point_cloud(point_cloud_left)
         downsampled_right = self.preprocess_point_cloud(point_cloud_right)
         transformation = self.multiscale_icp(downsampled_left, downsampled_right,
-                                             [5, 4, 3, 2, 1, 0.5], [50, 45, 40, 35, 30])
+                                             [6, 5, 4, 3, 2, 1, 0.5], [60, 50, 45, 40, 35, 30])
         downsampled_left.transform(transformation)
         open3d.visualization.draw_geometries([downsampled_left, downsampled_right])
 
     def preprocess_point_cloud(self, point_cloud: open3d.geometry.PointCloud) -> open3d.geometry.PointCloud:
-        # points = np.asarray(point_cloud.points)
-        # mask = points[:, 1] > -700
-        # point_cloud.points = open3d.utility.Vector3dVector(points[mask])
-        # point_cloud.colors = open3d.utility.Vector3dVector(np.asarray(point_cloud.colors)[mask])
         downsampled = self.downsample(point_cloud)
         downsampled = self.background_removal(downsampled)
         downsampled, inliers = downsampled.remove_radius_outlier(nb_points=60, radius=12)
@@ -37,11 +33,10 @@ class PointCloudProcessing:
         return point_cloud.select_down_sample(inliers, invert=True)
 
     def multiscale_icp(self, source, target, voxel_size, max_iter, init_transformation=np.identity(4)):
-        # current_transformation = init_transformation
-        current_transformation = [[9.70146379e-01, - 3.94297931e-02, - 2.39293325e-01, 1.37356105e+02],
-                                  [4.12079500e-02, 9.99147636e-01, 2.43031811e-03, - 3.41151242e+01],
-                                  [2.38993533e-01, - 1.22185517e-02, 9.70944282e-01, - 7.84797055e+01],
-                                  [0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]
+        current_transformation = init_transformation
+        source = self.crop_y(source)
+        target = self.crop_y(target)
+
         for i, scale in enumerate(range(len(max_iter))):  # multi-scale approach
             iter = max_iter[scale]
             distance_threshold = voxel_size[i] * 1.4
@@ -64,6 +59,14 @@ class PointCloudProcessing:
             current_transformation = result_icp.transformation
 
         return result_icp.transformation
+
+    def crop_y(self, point_cloud):
+        points = np.asarray(point_cloud.points)
+        mask = points[:, 1] > -700
+        point_cloud_cropped = open3d.geometry.PointCloud()
+        point_cloud_cropped.points = open3d.utility.Vector3dVector(points[mask])
+        point_cloud_cropped.colors = open3d.utility.Vector3dVector(np.asarray(point_cloud.colors)[mask])
+        return point_cloud_cropped
 
 
 if __name__ == "__main__":
