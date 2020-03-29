@@ -77,7 +77,7 @@ class ImageProcessing:
                                                     minDisparity=min_disparity,
                                                     disp12MaxDiff=disp_max_dif,
                                                     speckleWindowSize=speckle_size,
-                                                    speckleRange=1,
+                                                    speckleRange=2,
                                                     mode=cv2.STEREO_SGBM_MODE_HH
                                                     )
 
