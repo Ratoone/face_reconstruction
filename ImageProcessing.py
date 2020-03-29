@@ -3,7 +3,6 @@ import logging
 import cv2
 import numpy as np
 import open3d
-import scipy.io
 
 from IntrinsicCalibration import IntrinsicCalibration
 from StereoCalibration import StereoCalibration

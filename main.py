@@ -10,6 +10,7 @@ from PyQt5.QtGui import QImage, QPixmap
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QSlider
 
 from ImageProcessing import ImageProcessing
+from PointCloudProcessing import PointCloudProcessing
 
 
 class MainWindow(QMainWindow):
@@ -20,6 +21,7 @@ class MainWindow(QMainWindow):
         self.show()
 
         self.process = ImageProcessing()
+        self.point_cloud_processing = PointCloudProcessing()
         self.img1 = cv2.imread("./images/subject1/subject1Left/subject1_Left_1.jpg")
         # self.img1 = cv2.cvtColor(self.img1, cv2.COLOR_BGR2GRAY)
         self.img2 = cv2.imread("./images/subject1/subject1Middle/subject1_Middle_1.jpg")
@@ -29,7 +31,7 @@ class MainWindow(QMainWindow):
         self.compute_disparity_left_button.clicked.connect(partial(self.recompute_disparity, True))
         self.compute_disparity_right_button.clicked.connect(partial(self.recompute_disparity, False))
         self.calibrate_button.clicked.connect(self.calibrate)
-        # self.show_pcl_button.clicked.connect(self.show_pcl)
+        self.show_pcl_button.clicked.connect(self.process_pcl)
 
         self.image_placeholder = self.findChild(QLabel, "disparity_image")
 
@@ -98,6 +100,12 @@ class MainWindow(QMainWindow):
         disparity, pcl = self.process.process_pair(image_left, image_right, is_left=is_left)
         self.show_image(disparity)
         open3d.visualization.draw_geometries([pcl])
+        open3d.io.write_point_cloud("pcl_{}.pcd".format("left" if is_left else "right"), pcl)
+
+    def process_pcl(self):
+        point_cloud = open3d.io.read_point_cloud("pcl_left.pcd")
+        point_cloud_downsampled = self.point_cloud_processing.preprocess_point_cloud(point_cloud)
+        open3d.visualization.draw_geometries([point_cloud_downsampled])
 
     def show_image(self, image: np.ndarray):
         cv2.imshow("", image)
