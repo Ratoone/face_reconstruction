@@ -99,6 +99,7 @@ class MainWindow(QMainWindow):
 
         disparity, pcl = self.process.process_pair(image_left, image_right, is_left=is_left)
         self.show_image(disparity)
+        cv2.imwrite("disparity_{}.jpg".format("left" if is_left else "right"), cv2.normalize(disparity, None, alpha=0, beta=255, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_8U))
         open3d.visualization.draw_geometries([pcl])
         open3d.io.write_point_cloud("pcl_{}.pcd".format("left" if is_left else "right"), pcl)
 

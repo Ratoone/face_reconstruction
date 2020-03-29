@@ -81,14 +81,14 @@ class ImageProcessing:
                                                     mode=cv2.STEREO_SGBM_MODE_HH
                                                     )
 
-    def generate_point_cloud(self, disparity_image: np.ndarray):
+    def generate_point_cloud(self, disparity_image: np.array):
         focal_length = 1530
         Q = np.float32([[1, 0, 0, 0],
                         [0, -1, 0, 0],
                         [0, 0, focal_length * 0.05, 0],  # Focal length multiplication obtained experimentally.
                         [0, 0, 0, 1]])
 
-        mask = (disparity_image > disparity_image.min()).reshape(-1)
+        mask = np.array((disparity_image > disparity_image.min())).reshape(-1)
         point_cloud = cv2.reprojectImageTo3D(disparity_image, Q)
         point_cloud = point_cloud.reshape(-1, point_cloud.shape[-1])
         return point_cloud[mask], mask
