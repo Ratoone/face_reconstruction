@@ -32,7 +32,7 @@ class PointCloudProcessing:
 
     def post_process(self, point_cloud_left: open3d.geometry.PointCloud, point_cloud_right: open3d.geometry.PointCloud):
         final_point_cloud = point_cloud_left + point_cloud_right
-        final_point_cloud = self.downsample(final_point_cloud)
+        final_point_cloud = final_point_cloud.voxel_down_sample(voxel_size=1.4)
         return final_point_cloud
 
     def convert_to_mesh(self, point_cloud: open3d.geometry.PointCloud):

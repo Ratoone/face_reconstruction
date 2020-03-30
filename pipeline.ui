@@ -53,17 +53,17 @@
      <string>Calibrate</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="show_pcl_button">
+   <widget class="QPushButton" name="process_button">
     <property name="geometry">
      <rect>
       <x>50</x>
       <y>410</y>
-      <width>271</width>
+      <width>291</width>
       <height>31</height>
      </rect>
     </property>
     <property name="text">
-     <string>Show Point Cloud</string>
+     <string>Merge Images</string>
     </property>
    </widget>
    <widget class="QWidget" name="gridLayoutWidget">

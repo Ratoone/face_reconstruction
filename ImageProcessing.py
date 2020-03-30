@@ -5,6 +5,7 @@ import numpy as np
 import open3d
 
 from IntrinsicCalibration import IntrinsicCalibration
+from PointCloudProcessing import PointCloudProcessing
 from StereoCalibration import StereoCalibration
 
 
@@ -27,6 +28,8 @@ class ImageProcessing:
 
         self.block_matching = cv2.StereoSGBM_create()
 
+        self.point_cloud_processing = PointCloudProcessing()
+
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def calibrate(self):
@@ -37,9 +40,10 @@ class ImageProcessing:
         self.stereo_left.calibrate()
         self.stereo_right.calibrate()
 
-    def process_image_batch(self, image_left, image_mid, image_right):
+    def process_image_batch(self, image_left, image_mid, image_right) -> open3d.geometry.TriangleMesh:
         disparity_left, point_cloud_left = self.process_pair(image_left, image_mid, is_left=True)
         disparity_right, point_cloud_right = self.process_pair(image_mid, image_right, is_left=False)
+        return self.point_cloud_processing.process(point_cloud_left, point_cloud_right)
 
     def process_pair(self, image_left: np.ndarray, image_right: np.ndarray, is_left: bool = True):
         image_left = cv2.normalize(image_left, None, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
