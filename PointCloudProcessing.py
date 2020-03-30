@@ -1,3 +1,5 @@
+import logging
+
 import open3d
 import numpy as np
 
@@ -8,21 +10,41 @@ class PointCloudProcessing:
     """
 
     def __init__(self):
-        pass
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     def process(self, point_cloud_left: open3d.geometry.PointCloud, point_cloud_right: open3d.geometry.PointCloud):
+        self.logger.info("Preprocessing...")
         downsampled_left = self.preprocess_point_cloud(point_cloud_left)
         downsampled_right = self.preprocess_point_cloud(point_cloud_right)
+        self.logger.info("Merging...")
         transformation = self.multiscale_icp(downsampled_left, downsampled_right,
                                              [6, 5, 4, 3, 2, 1, 0.5], [60, 50, 45, 40, 35, 30])
         downsampled_left.transform(transformation)
-        open3d.visualization.draw_geometries([downsampled_left, downsampled_right])
+        final_point_cloud = self.post_process(downsampled_left, downsampled_right)
+        self.logger.info("Creating mesh...")
+        return self.convert_to_mesh(final_point_cloud)
 
     def preprocess_point_cloud(self, point_cloud: open3d.geometry.PointCloud) -> open3d.geometry.PointCloud:
         downsampled = self.downsample(point_cloud)
         downsampled = self.background_removal(downsampled)
         downsampled, inliers = downsampled.remove_radius_outlier(nb_points=60, radius=12)
         return downsampled
+
+    def post_process(self, point_cloud_left: open3d.geometry.PointCloud, point_cloud_right: open3d.geometry.PointCloud):
+        final_point_cloud = point_cloud_left + point_cloud_right
+        final_point_cloud = self.downsample(final_point_cloud)
+        return final_point_cloud
+
+    def convert_to_mesh(self, point_cloud: open3d.geometry.PointCloud):
+        point_cloud.estimate_normals()
+        distances = point_cloud.compute_nearest_neighbor_distance()
+        average_distance = np.mean(distances)
+        radius = 1.5 * average_distance
+        mesh = open3d.geometry.TriangleMesh()
+        mesh = mesh.create_from_point_cloud_ball_pivoting(pcd=point_cloud, radii=open3d.utility.DoubleVector([radius, radius * 2]))
+        mesh = mesh.filter_smooth_simple()
+        mesh = mesh.compute_vertex_normals()
+        return mesh
 
     def downsample(self, point_cloud: open3d.geometry.PointCloud) -> open3d.geometry.PointCloud:
         voxel_down_pcd = point_cloud.voxel_down_sample(voxel_size=1.7)
@@ -73,7 +95,5 @@ if __name__ == "__main__":
     point_cloud_processing = PointCloudProcessing()
     pcl_left = open3d.io.read_point_cloud("pcl_left.pcd")
     pcl_right = open3d.io.read_point_cloud("pcl_right.pcd")
-    point_cloud_processing.process(pcl_left, pcl_right)
-    # point_cloud_downsampled = point_cloud_processing.preprocess_point_cloud(pcl_right)
-    # open3d.visualization.draw_geometries([point_cloud_downsampled])
-    # transformation, information = point_cloud_processing.multiscale_icp(pcl_left, pcl_right, [voxel_size, voxel_size / 2, voxel_size / 4], [50, 30, 14])
+    pcl_final = point_cloud_processing.process(pcl_left, pcl_right)
+    open3d.visualization.draw_geometries([pcl_final])
