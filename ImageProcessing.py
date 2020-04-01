@@ -86,7 +86,7 @@ class ImageProcessing:
                                                     )
 
     def generate_point_cloud(self, disparity_image: np.array):
-        focal_length = 1530
+        focal_length = self.stereo_left.camera_left.camera_matrix[0, 0]
         Q = np.float32([[1, 0, 0, 0],
                         [0, -1, 0, 0],
                         [0, 0, focal_length * 0.05, 0],  # Focal length multiplication obtained experimentally.

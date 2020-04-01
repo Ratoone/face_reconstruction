@@ -119,10 +119,6 @@ class MainWindow(QMainWindow):
         cv2.waitKey()
         cv2.destroyAllWindows()
 
-        qimg = QImage(image.data, image.shape[1], image.shape[0], QImage.Format_Indexed8)
-        self.image_placeholder.setGeometry(QtCore.QRect(self.image_placeholder.x(), self.image_placeholder.y(), image.shape[1], image.shape[0]))
-        self.image_placeholder.setPixmap(QPixmap.fromImage(qimg))
-
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format="%(asctime)s - [%(name)s] %(levelname)s: %(message)s")
